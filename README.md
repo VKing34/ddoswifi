@@ -10,5 +10,5 @@ All the required tools are listed before starting the program.
 So if you're missing some ones, just install them by Linux Terminal with some simple commands.
 
 If you have any quez, text me via lzzvkingzzl@gmail.com
-
+And sorry for my English :)))
 Thank you !
