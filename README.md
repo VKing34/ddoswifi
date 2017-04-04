@@ -2,7 +2,7 @@
 
 by VKing34
 
-Kick off all clients of the marked wifi
+Kick all clients off the marked wifi
 
 Copy "ddoswifi" and "airmon" to /usr/bin/ 
 and execute them by the command - "chmod +x ddoswifi" "chmod +x airmon"
