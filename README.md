@@ -9,7 +9,7 @@ and execute them by the command - "chmod +x ddoswifi" & "chmod +x airmon"
 then "cd /urs/bin" and type "ddoswifi" to begin.
 
 All the required tools are listed before starting the program.
-So if you're missing some ones, just install them by Linux Terminal with some simple commands. "sudo apt-get install <toolsname>"
+So if you're missing some ones, just install them by Linux Terminal with some simple commands. "sudo apt-get install (toolsname)"
 
 *Don't use it for bad purposes.
 
