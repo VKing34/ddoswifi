@@ -23,9 +23,9 @@ Kick all clients off a marked wifi
   
    3, Select a target or rescan
   
-   4, If you wanna stop one task, just press CTRL+C in the responded window.
+   4, If you wanna stop any task, just press CTRL+C in the responded window.
   
-   5, To exit, you can choose "Exit" option or CTRL+C in the main window.
+   5, To exit, you can choose "Exit" option or press CTRL+C in the main window.
 
 *Don't use it for bad purposes.
 
